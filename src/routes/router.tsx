@@ -8,8 +8,8 @@ import ProductDetailPage from "@/features/products/ProductDetailPage";
 import InventoryPage from "@/features/inventory/InventoryPage";
 import ProductCreatePage from "@/features/productDetail/ProductDetail";
 import InboundPage from "@/features/inbound/InboundPage";
-import InboundDetailPage from "@/features/inbound/InboundDetailPage";
-import InboundFormPage from "@/features/inbound/InboundFormPage";
+import InboundDetailPage from "@/features/inboundDetail/InboundDetailPage";
+import InboundFormPage from "@/features/inboundDetail/InboundFormPage";
 
 export const router = createBrowserRouter([
   {

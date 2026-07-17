@@ -1,8 +1,7 @@
 import type { TextareaHTMLAttributes } from "react";
-import  type { UseFormRegisterReturn } from "react-hook-form";
+import type { UseFormRegisterReturn } from "react-hook-form";
 
-interface Props
-  extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+interface Props extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label: string;
   register: UseFormRegisterReturn;
   required?: boolean;
@@ -16,15 +15,10 @@ export default function FormTextarea({
 }: Props) {
   return (
     <div className="space-y-2">
-
       <label className="text-sm font-semibold">
-
         {label}
 
-        {required && (
-          <span className="text-red-500 ml-1">*</span>
-        )}
-
+        {required && <span className="text-red-500 ml-1">*</span>}
       </label>
 
       <textarea
@@ -36,10 +30,10 @@ export default function FormTextarea({
         rounded-xl
         border
         border-slate-300
+        bg-slate-50
         p-4
         "
       />
-
     </div>
   );
 }

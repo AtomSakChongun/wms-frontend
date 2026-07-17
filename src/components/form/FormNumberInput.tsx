@@ -17,13 +17,9 @@ export default function FormNumberInput({
 }: Props) {
   return (
     <div className="space-y-2">
-
-      <label className="text-sm font-semibold">
-        {label}
-      </label>
+      <label className="text-sm font-semibold">{label}</label>
 
       <div className="relative">
-
         {prefix && (
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
             {prefix}
@@ -40,7 +36,7 @@ export default function FormNumberInput({
             rounded-xl
             border
             border-slate-300
-            bg-white
+            bg-slate-50
             ${prefix ? "pl-10" : "pl-4"}
             ${suffix ? "pr-10" : "pr-4"}
           `}
@@ -51,9 +47,7 @@ export default function FormNumberInput({
             {suffix}
           </span>
         )}
-
       </div>
-
     </div>
   );
 }

@@ -1,15 +1,6 @@
 import { useState, useEffect } from "react";
 import { Search, RotateCcw, X, SlidersHorizontal } from "lucide-react";
-import {
-  Autocomplete,
-  TextField,
-  Checkbox,
-} from "@mui/material";
-import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
-import CheckBoxIcon from "@mui/icons-material/CheckBox";
-
-const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
-const checkedIcon = <CheckBoxIcon fontSize="small" />;
+import { FormInput, FormMultiSelect } from "@/components/form";
 
 export interface AppliedFilters {
   searchQuery: string;
@@ -27,30 +18,6 @@ interface ProductFiltersProps {
   totalCount: number;
 }
 
-const customTextFieldSx = {
-  "& .MuiOutlinedInput-root": {
-    borderRadius: "12px",
-    backgroundColor: "#f8fafc", // slate-50
-    fontSize: "0.875rem",
-    "& fieldset": {
-      borderColor: "#e2e8f0", // slate-200
-    },
-    "&:hover fieldset": {
-      borderColor: "#cbd5e1", // slate-300
-    },
-    "&.Mui-focused fieldset": {
-      borderColor: "#4f46e5", // indigo-600
-    },
-  },
-  "& .MuiInputLabel-root": {
-    color: "#64748b", // slate-500
-    fontSize: "0.875rem",
-    "&.Mui-focused": {
-      color: "#4f46e5", // indigo-600
-    },
-  },
-};
-
 const stockOptions = [
   { id: "in-stock", label: "In Stock" },
   { id: "low-stock", label: "Low Stock (<= 20)" },
@@ -64,10 +31,18 @@ export default function InventoryFilters({
   statusesList,
 }: ProductFiltersProps) {
   // Local temporary states
-  const [tempSearchQuery, setTempSearchQuery] = useState(appliedFilters.searchQuery);
-  const [tempSelectedCategories, setTempSelectedCategories] = useState<string[]>(appliedFilters.categories);
-  const [tempSelectedStatuses, setTempSelectedStatuses] = useState<string[]>(appliedFilters.statuses);
-  const [tempStockFilters, setTempStockFilters] = useState<string[]>(appliedFilters.stockFilters);
+  const [tempSearchQuery, setTempSearchQuery] = useState(
+    appliedFilters.searchQuery,
+  );
+  const [tempSelectedCategories, setTempSelectedCategories] = useState<
+    string[]
+  >(appliedFilters.categories);
+  const [tempSelectedStatuses, setTempSelectedStatuses] = useState<string[]>(
+    appliedFilters.statuses,
+  );
+  const [tempStockFilters, setTempStockFilters] = useState<string[]>(
+    appliedFilters.stockFilters,
+  );
 
   // Sync local states when appliedFilters changes (e.g. from badge remove or reset)
   useEffect(() => {
@@ -186,7 +161,10 @@ export default function InventoryFilters({
               slotProps={{
                 input: {
                   startAdornment: (
-                    <Search size={18} className="text-slate-400 mr-2 shrink-0" />
+                    <Search
+                      size={18}
+                      className="text-slate-400 mr-2 shrink-0"
+                    />
                   ),
                   endAdornment: tempSearchQuery && (
                     <button
@@ -296,8 +274,12 @@ export default function InventoryFilters({
               disableCloseOnSelect
               getOptionLabel={(option) => option.label}
               isOptionEqualToValue={(option, value) => option.id === value.id}
-              value={stockOptions.filter((opt) => tempStockFilters.includes(opt.id))}
-              onChange={(_, newValue) => setTempStockFilters(newValue.map((v) => v.id))}
+              value={stockOptions.filter((opt) =>
+                tempStockFilters.includes(opt.id),
+              )}
+              onChange={(_, newValue) =>
+                setTempStockFilters(newValue.map((v) => v.id))
+              }
               renderOption={(props, option, { selected }) => {
                 const { key, ...optionProps } = props;
                 return (

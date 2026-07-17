@@ -2,4 +2,6 @@ export { default as FormInput } from "./FormInput";
 export { default as FormSelect } from "./FormSelect";
 export { default as FormTextarea } from "./FormTextarea";
 export { default as FormNumberInput } from "./FormNumberInput";
+export { default as FormMultiSelect } from "./FormMultiSelect";
+export { default as FormAutocompleteMultiSelect } from "./FormAutocompleteMultiSelect";
 export { default as SectionTitle } from "./SectionTitle";

@@ -7,6 +7,7 @@ import {
   type ColumnDef,
 } from "@tanstack/react-table";
 import { cn } from "@/utils/cn";
+import { FormSelect } from "@/components/form";
 import {
   Inbox,
   ChevronLeft,
@@ -77,113 +78,102 @@ export function DataTable<T>({
   return (
     <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
       <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead className="border-b bg-slate-50">
-          {table.getHeaderGroups().map((group) => (
-            <tr key={group.id}>
-              {group.headers.map((header) => (
-                <th
-                  key={header.id}
-                  className={cn(
-                    "px-5 py-4 text-left text-xs font-semibold uppercase text-slate-500",
-                    header.column.columnDef.meta?.hideOnMobile && "hidden md:table-cell"
-                  )}
-                >
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext()
-                  )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-
-        <tbody>
-          {table.getRowModel().rows.length > 0 ? (
-            table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className="border-b hover:bg-slate-50 transition-colors"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td
-                    key={cell.id}
+        <table className="w-full">
+          <thead className="border-b bg-slate-50">
+            {table.getHeaderGroups().map((group) => (
+              <tr key={group.id}>
+                {group.headers.map((header) => (
+                  <th
+                    key={header.id}
                     className={cn(
-                      "px-5 py-4",
-                      cell.column.columnDef.meta?.hideOnMobile && "hidden md:table-cell"
+                      "px-5 py-4 text-left text-xs font-semibold uppercase text-slate-500",
+                      header.column.columnDef.meta?.hideOnMobile &&
+                        "hidden md:table-cell",
                     )}
                   >
                     {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext()
+                      header.column.columnDef.header,
+                      header.getContext(),
                     )}
-                  </td>
+                  </th>
                 ))}
               </tr>
-            ))
-          ) : (
-            <tr>
-              <td
-                colSpan={columns.length}
-                className="px-5 py-16 text-center"
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <Inbox
-                    className="text-slate-300"
-                    size={44}
-                    strokeWidth={1}
-                  />
-                  <p className="font-medium text-slate-900">No Data</p>
-                  <p className="text-sm text-slate-500">
-                    No products match your active filters.
-                  </p>
-                </div>
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            ))}
+          </thead>
+
+          <tbody>
+            {table.getRowModel().rows.length > 0 ? (
+              table.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className="border-b hover:bg-slate-50 transition-colors"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      className={cn(
+                        "px-5 py-4",
+                        cell.column.columnDef.meta?.hideOnMobile &&
+                          "hidden md:table-cell",
+                      )}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={columns.length} className="px-5 py-16 text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <Inbox
+                      className="text-slate-300"
+                      size={44}
+                      strokeWidth={1}
+                    />
+                    <p className="font-medium text-slate-900">No Data</p>
+                    <p className="text-sm text-slate-500">
+                      No products match your active filters.
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       {data.length > 0 && (
         <div className="flex flex-col gap-3 border-t bg-slate-50 px-5 py-3 md:flex-row md:items-center md:justify-between">
-
           {/* Rows per page */}
           <div className="flex items-center gap-2 text-sm">
             <span className="text-slate-500">Rows per page</span>
 
-            <select
-              value={pagination.pageSize}
-              onChange={(e) =>
-                table.setPageSize(Number(e.target.value))
-              }
-              className="rounded-lg border border-slate-200 px-2 py-1"
-            >
-              {PAGE_SIZE_OPTIONS.map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
+            <div className="w-24">
+              <FormSelect
+                options={PAGE_SIZE_OPTIONS.map((size) => ({
+                  label: size.toString(),
+                  value: size.toString(),
+                }))}
+                value={pagination.pageSize.toString()}
+                onValueChange={(value) => table.setPageSize(Number(value))}
+                className="w-full"
+              />
+            </div>
           </div>
 
           {/* Page Info */}
           <div className="text-sm text-slate-500">
-            Page{" "}
-            <span className="font-semibold">
-              {currentPage}
-            </span>{" "}
-            of{" "}
-            <span className="font-semibold">
-              {pageCount}
-            </span>{" "}
-            • {data.length} rows
+            Page <span className="font-semibold">{currentPage}</span> of{" "}
+            <span className="font-semibold">{pageCount}</span> • {data.length}{" "}
+            rows
           </div>
 
           {/* Pagination */}
           <div className="flex items-center gap-1">
-
             {/* First */}
             <button
               onClick={() => table.firstPage()}
@@ -206,18 +196,13 @@ export function DataTable<T>({
             <div className="flex items-center gap-1 px-2">
               {getPageNumbers(currentPage, pageCount).map((page, index) =>
                 page === "..." ? (
-                  <span
-                    key={index}
-                    className="px-2 text-slate-400"
-                  >
+                  <span key={index} className="px-2 text-slate-400">
                     ...
                   </span>
                 ) : (
                   <button
                     key={page}
-                    onClick={() =>
-                      table.setPageIndex((page as number) - 1)
-                    }
+                    onClick={() => table.setPageIndex((page as number) - 1)}
                     className={`h-8 min-w-[32px] rounded-lg text-sm transition ${
                       page === currentPage
                         ? "bg-indigo-600 text-white"
@@ -226,7 +211,7 @@ export function DataTable<T>({
                   >
                     {page}
                   </button>
-                )
+                ),
               )}
             </div>
 
@@ -247,7 +232,6 @@ export function DataTable<T>({
             >
               <ChevronsRight size={16} />
             </button>
-
           </div>
         </div>
       )}
