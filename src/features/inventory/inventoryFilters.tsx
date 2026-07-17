@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Search, RotateCcw, X, SlidersHorizontal } from "lucide-react";
-import { FormInput, FormMultiSelect } from "@/components/form";
+import { Autocomplete, Checkbox, TextField } from "@mui/material";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 
 export interface AppliedFilters {
   searchQuery: string;
@@ -23,6 +25,18 @@ const stockOptions = [
   { id: "low-stock", label: "Low Stock (<= 20)" },
   { id: "out-of-stock", label: "Out of Stock" },
 ];
+
+const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
+const checkedIcon = <CheckBoxIcon fontSize="small" />;
+
+const customTextFieldSx = {
+  backgroundColor: "#f8fafc",
+  borderRadius: 12,
+  "& .MuiOutlinedInput-root": {
+    borderRadius: 12,
+    backgroundColor: "#f8fafc",
+  },
+};
 
 export default function InventoryFilters({
   appliedFilters,
