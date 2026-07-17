@@ -18,11 +18,11 @@ export const columns: ColumnDef<Product>[] = [
   },
   {
     accessorKey: "name",
-    header: "ชื่อสินค้า",
+    header: "PRODUCT NAME",
   },
   {
     accessorKey: "category",
-    header: "หมวดหมู่",
+    header: "CATEGORY",
   },
   {
     accessorKey: "barcode",
@@ -30,17 +30,17 @@ export const columns: ColumnDef<Product>[] = [
   },
   {
     accessorKey: "cost",
-    header: "ราคาต่อหน่วย",
+    header: "UNIT COST",
     cell: ({ row }) =>
       `$${row.original.cost.toFixed(2)}`,
   },
   {
     accessorKey: "stock",
-    header: "จำนวน",
+    header: "STOCK",
   },
   {
     accessorKey: "status",
-    header: "สถาณะ",
+    header: "STATUS",
     cell: ({ row }) => (
       <StatusBadge status={row.original.status} />
     ),

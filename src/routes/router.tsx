@@ -8,8 +8,8 @@ import ProductDetailPage from "@/features/products/ProductDetailPage";
 import InventoryPage from "@/features/inventory/InventoryPage";
 import ProductCreatePage from "@/features/productDetail/ProductDetail";
 import InboundPage from "@/features/inbound/InboundPage";
-import InboundCreatePage from "@/features/inbound/InboundCreatePage";
-import InboundDetailPage from "@/features/inboundDetail/InboundDetail";
+import InboundDetailPage from "@/features/inbound/InboundDetailPage";
+import InboundFormPage from "@/features/inbound/InboundFormPage";
 
 export const router = createBrowserRouter([
   {
@@ -29,6 +29,10 @@ export const router = createBrowserRouter([
         element: <ProductCreatePage />,
       },
       {
+        path: "/products/:sku/edit",
+        element: <ProductCreatePage />,
+      },
+      {
         path: "/products/:sku",
         element: <ProductDetailPage />,
       },
@@ -40,14 +44,9 @@ export const router = createBrowserRouter([
         path: "/inbound",
         element: <InboundPage />,
       },
-      {
-        path: "/inbound/new",
-        element: <InboundCreatePage />,
-      },
-      {
-        path: "/inbound/:lotId",
-        element: <InboundDetailPage />,
-      },
+      { path: "/inbound/new", element: <InboundFormPage /> },
+      { path: "/inbound/:lotId/edit", element: <InboundFormPage /> },
+      { path: "/inbound/:lotId", element: <InboundDetailPage /> },
     ],
   },
 ]);
