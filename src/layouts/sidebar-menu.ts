@@ -13,6 +13,7 @@ import {
   Users,
   ShieldCheck,
   Settings,
+  CheckCircle,
 } from "lucide-react";
 
 export const sidebarMenu = [
@@ -66,6 +67,18 @@ export const sidebarMenu = [
         label: "Transfer",
         icon: ArrowRightLeft,
         to: "/transfer",
+      },
+    ],
+  },
+
+  {
+    title: "Quality Control",
+
+    items: [
+      {
+        label: "QC Inspection",
+        icon: CheckCircle,
+        to: "/qc",
       },
     ],
   },

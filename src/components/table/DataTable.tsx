@@ -20,6 +20,8 @@ interface Props<T> {
   columns: ColumnDef<T>[];
   data: T[];
   defaultPageSize?: number;
+  onRowClick?: (row: T) => void;
+  rowClassName?: string | ((row: T) => string);
 }
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
@@ -57,6 +59,8 @@ export function DataTable<T>({
   columns,
   data,
   defaultPageSize = 10,
+  onRowClick,
+  rowClassName,
 }: Props<T>) {
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -103,28 +107,38 @@ export function DataTable<T>({
 
           <tbody>
             {table.getRowModel().rows.length > 0 ? (
-              table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-b hover:bg-slate-50 transition-colors"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <td
-                      key={cell.id}
-                      className={cn(
-                        "px-5 py-4",
-                        cell.column.columnDef.meta?.hideOnMobile &&
-                          "hidden md:table-cell",
-                      )}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))
+              table.getRowModel().rows.map((row) => {
+                const extraClass =
+                  typeof rowClassName === "function"
+                    ? rowClassName(row.original)
+                    : (rowClassName ?? "");
+                return (
+                  <tr
+                    key={row.id}
+                    onClick={() => onRowClick?.(row.original)}
+                    className={cn(
+                      "border-b hover:bg-slate-50 transition-colors",
+                      extraClass,
+                    )}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <td
+                        key={cell.id}
+                        className={cn(
+                          "px-5 py-4",
+                          cell.column.columnDef.meta?.hideOnMobile &&
+                            "hidden md:table-cell",
+                        )}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
             ) : (
               <tr>
                 <td colSpan={columns.length} className="px-5 py-16 text-center">
