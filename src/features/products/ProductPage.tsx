@@ -2,13 +2,15 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { DataTable } from "@/components/table/DataTable";
 import { columns } from "./columns";
-import { products } from "./mock";
+import { useProducts } from "./hooks/useProducts";
 import ProductFilters, { type AppliedFilters } from "./ProductFilters";
 import { StatCard } from "@/components/ui/StatCard";
-import { Download, Upload, Plus } from "lucide-react";
+import { Download, Upload, Plus, Loader2 } from "lucide-react";
 
 export default function ProductPage() {
   const navigate = useNavigate();
+  const { data: products = [], isLoading, isError, error } = useProducts();
+
   const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>({
     searchQuery: "",
     categories: [],
@@ -16,15 +18,15 @@ export default function ProductPage() {
     stockFilters: [],
   });
 
-  // Dynamically extract categories from mock data
+  // Dynamically extract categories from API data
   const categoriesList = useMemo(() => {
     return Array.from(new Set(products.map((p) => p.category))).sort();
-  }, []);
+  }, [products]);
 
-  // Dynamically extract statuses from mock data
+  // Dynamically extract statuses from API data
   const statusesList = useMemo(() => {
     return Array.from(new Set(products.map((p) => p.status))).sort();
-  }, []);
+  }, [products]);
 
   // Filter products based on active criteria
   const filteredProducts = useMemo(() => {
@@ -47,20 +49,16 @@ export default function ProductPage() {
       let matchesStock = true;
       if (appliedFilters.stockFilters.length > 0) {
         matchesStock = appliedFilters.stockFilters.some((filter) => {
-          if (filter === "in-stock") {
-            return product.stock > 0;
-          } else if (filter === "low-stock") {
-            return product.stock > 0 && product.stock <= 20;
-          } else if (filter === "out-of-stock") {
-            return product.stock === 0;
-          }
+          if (filter === "in-stock") return product.stock > 0;
+          if (filter === "low-stock") return product.stock > 0 && product.stock <= 20;
+          if (filter === "out-of-stock") return product.stock === 0;
           return false;
         });
       }
 
       return matchesSearch && matchesCategory && matchesStatus && matchesStock;
     });
-  }, [appliedFilters]);
+  }, [products, appliedFilters]);
 
   const totalProducts = products.length;
   const activeProducts = products.filter((p) => p.status === "Active").length;
@@ -117,19 +115,36 @@ export default function ProductPage() {
         <StatCard value={inactiveProducts} label="Inactive" variant="muted" />
       </div>
 
-      <ProductFilters
-        appliedFilters={appliedFilters}
-        onApplyFilters={handleApplyFilters}
-        categoriesList={categoriesList}
-        statusesList={statusesList}
-        filteredCount={filteredProducts.length}
-        totalCount={products.length}
-      />
+      {/* Loading state */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-16 text-muted-foreground">
+          <Loader2 size={20} className="animate-spin mr-2" />
+          <span className="text-sm">Loading products...</span>
+        </div>
+      )}
 
-      <DataTable
-        columns={columns}
-        data={filteredProducts}
-      />
+      {/* Error state */}
+      {isError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          Failed to load products: {(error as Error)?.message ?? "Unknown error"}
+        </div>
+      )}
+
+      {/* Data */}
+      {!isLoading && !isError && (
+        <>
+          <ProductFilters
+            appliedFilters={appliedFilters}
+            onApplyFilters={handleApplyFilters}
+            categoriesList={categoriesList}
+            statusesList={statusesList}
+            filteredCount={filteredProducts.length}
+            totalCount={products.length}
+          />
+
+          <DataTable columns={columns} data={filteredProducts} />
+        </>
+      )}
     </div>
   );
 }

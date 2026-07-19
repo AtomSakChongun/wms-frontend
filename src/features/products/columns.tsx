@@ -4,6 +4,7 @@ import { Eye, SquarePen, Trash2 } from "lucide-react";
 import StatusBadge from "@/components/table/StatusBadge";
 
 export interface Product {
+  _id : string
   sku: string;
   name: string;
   category: string;
@@ -98,6 +99,6 @@ export const columns: ColumnDef<Product>[] = [
   {
     id: "actions",
     header: "ACTIONS",
-    cell: ({ row }) => <ActionCell sku={row.original.sku} />,
+    cell: ({ row }) => <ActionCell sku={row.original._id} />,
   },
 ];

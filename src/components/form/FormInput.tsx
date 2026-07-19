@@ -4,7 +4,7 @@ import type { UseFormRegisterReturn } from "react-hook-form";
 interface Props extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   required?: boolean;
-  register: UseFormRegisterReturn;
+  register?: UseFormRegisterReturn;
   error?: string;
 }
 
@@ -24,7 +24,7 @@ export default function FormInput({
       </label>
 
       <input
-        {...register}
+        {...(register ?? {})}
         {...props}
         className="
         h-10

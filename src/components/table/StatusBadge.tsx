@@ -6,7 +6,7 @@ export default function StatusBadge({
   status,
 }: Props) {
   const colors = {
-    Active:
+    "In Stock":
       "bg-green-100 text-green-700",
 
     "Low Stock":

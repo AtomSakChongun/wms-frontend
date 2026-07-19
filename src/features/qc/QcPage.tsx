@@ -4,7 +4,7 @@ import { DataTable } from "@/components/table/DataTable";
 import { StatCard } from "@/components/ui/StatCard";
 import { qcLotsToReview } from "./qcMockData";
 import QcFilters, { type AppliedFilters } from "./qcFilters";
-import { qcLotListColumns } from "./columns";
+import { createQcLotListColumns } from "./columns";
 
 export default function QcPage() {
   const navigate = useNavigate();
@@ -84,6 +84,11 @@ export default function QcPage() {
     ),
   ).length;
 
+  const columns = useMemo(
+    () => createQcLotListColumns((lotId) => navigate(`/qc/${lotId}`)),
+    [navigate],
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -121,10 +126,8 @@ export default function QcPage() {
       />
 
       <DataTable
-        columns={qcLotListColumns}
+        columns={columns}
         data={filteredLots}
-        onRowClick={(row) => navigate(`/qc/${row.lotId}`)}
-        rowClassName="cursor-pointer"
       />
     </div>
   );

@@ -1,4 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
+import { ClipboardCheck } from "lucide-react";
 import StatusBadge from "@/components/table/StatusBadge";
 import type { QcItemReview } from "./types";
 
@@ -169,3 +170,27 @@ export const qcLotListColumns: ColumnDef<any>[] = [
     },
   },
 ];
+
+export function createQcLotListColumns(
+  onInspect: (lotId: string) => void,
+): ColumnDef<any>[] {
+  return [
+    ...qcLotListColumns,
+    {
+      id: "actions",
+      header: "Action",
+      cell: ({ row }) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onInspect(row.original.lotId);
+          }}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+        >
+          <ClipboardCheck size={13} />
+          ตรวจ
+        </button>
+      ),
+    },
+  ];
+}
