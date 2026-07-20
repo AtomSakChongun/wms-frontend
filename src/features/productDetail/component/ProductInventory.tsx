@@ -10,8 +10,16 @@ export default function ProductInventory() {
 
         <div>
           <FormNumberInput
+            label="Current Stock"
+            register={register("stock", { valueAsNumber: true })}
+          />
+          <p className="mt-1 text-xs text-slate-400">Initial quantity on hand</p>
+        </div>
+
+        <div>
+          <FormNumberInput
             label="Min Stock Level"
-            register={register("minStock")}
+            register={register("minStock", { valueAsNumber: true })}
           />
           <p className="mt-1 text-xs text-slate-400">Alert below this</p>
         </div>
@@ -19,7 +27,7 @@ export default function ProductInventory() {
         <div>
           <FormNumberInput
             label="Max Stock Level"
-            register={register("maxStock")}
+            register={register("maxStock", { valueAsNumber: true })}
           />
           <p className="mt-1 text-xs text-slate-400">Upper target</p>
         </div>
@@ -27,7 +35,7 @@ export default function ProductInventory() {
         <div>
           <FormNumberInput
             label="Reorder Point"
-            register={register("reorderPoint")}
+            register={register("reorderPoint", { valueAsNumber: true })}
           />
           <p className="mt-1 text-xs text-slate-400">Trigger auto-reorder</p>
         </div>
@@ -35,7 +43,7 @@ export default function ProductInventory() {
         <div>
           <FormNumberInput
             label="Lead Time (days)"
-            register={register("leadTime")}
+            register={register("leadTime", { valueAsNumber: true })}
           />
           <p className="mt-1 text-xs text-slate-400">Avg. supplier delivery time</p>
         </div>
@@ -43,9 +51,9 @@ export default function ProductInventory() {
         <div>
           <FormNumberInput
             label="Shelf Life (days)"
-            register={register("shelfLife")}
+            register={register("shelfLife", { valueAsNumber: true })}
           />
-          <p className="mt-1 text-xs text-slate-400">Leave blank if not perishable</p>
+          <p className="mt-1 text-xs text-slate-400">Leave 0 if not perishable</p>
         </div>
 
       </div>

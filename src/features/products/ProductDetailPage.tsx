@@ -1,7 +1,17 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
-import { products } from "./mock";
+import { ArrowLeft, Pencil, Trash2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useProduct, useDeleteProduct } from "./hooks/useProducts";
 import StatusBadge from "@/components/table/StatusBadge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // ─── Field display helpers ───────────────────────────────────────────────────
 
@@ -39,15 +49,43 @@ function Section({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ProductDetailPage() {
-  const { sku } = useParams<{ sku: string }>();
+  const { _id } = useParams<{ _id: string }>();
   const navigate = useNavigate();
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const product = products.find((p) => p.sku === sku);
+  const { data: product, isLoading, isError, error } = useProduct(_id!);
+  const { mutateAsync: deleteProduct, isPending: isDeleting } = useDeleteProduct();
+
+  const handleDelete = async () => {
+    try {
+      await deleteProduct(_id!);
+      toast.success(`"${product?.name}" deleted successfully`);
+      navigate("/products");
+    } catch {
+      toast.error("Failed to delete product");
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-slate-400">
+        <span className="text-sm">Loading...</span>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+        Failed to load product: {(error as Error)?.message ?? "Unknown error"}
+      </div>
+    );
+  }
 
   if (!product) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-24 text-slate-500">
-        <p className="text-lg font-semibold">Product not found</p>
+        <p className="text-lg font-semibold">Product ${_id} not found</p>
         <button
           type="button"
           onClick={() => navigate("/products")}
@@ -99,7 +137,7 @@ export default function ProductDetailPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => navigate(`/products/${sku}/edit`)}
+            onClick={() => navigate(`/products/${_id}/edit`)}
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
           >
             <Pencil size={14} />
@@ -108,6 +146,7 @@ export default function ProductDetailPage() {
           <button
             type="button"
             className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 shadow-sm transition-colors hover:bg-red-50"
+            onClick={() => setDeleteOpen(true)}
           >
             <Trash2 size={14} />
             Delete
@@ -261,6 +300,39 @@ export default function ProductDetailPage() {
           </Section>
         )}
       </div>
+
+      {/* ── Confirm delete dialog ── */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Product</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-slate-800">"{product.name}"</span>?
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(false)}
+              disabled={isDeleting}
+              className="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-sm font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-60"
+            >
+              {isDeleting && <Loader2 size={14} className="animate-spin" />}
+              {isDeleting ? "Deleting..." : "Delete"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

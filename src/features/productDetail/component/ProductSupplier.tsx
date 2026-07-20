@@ -11,7 +11,8 @@ export default function ProductSupplier() {
         <div>
           <FormInput
             label="Primary Supplier"
-            register={register("supplierId")}
+            required
+            register={register("supplier")}
             placeholder="Supplier company name"
           />
         </div>
@@ -19,6 +20,7 @@ export default function ProductSupplier() {
         <div>
           <FormInput
             label="Supplier SKU"
+            required
             register={register("supplierSku")}
             placeholder="Supplier part #"
           />

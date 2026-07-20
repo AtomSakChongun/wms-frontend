@@ -31,11 +31,11 @@ export const router = createBrowserRouter([
         element: <ProductCreatePage />,
       },
       {
-        path: "/products/:sku/edit",
+        path: "/products/:_id/edit",
         element: <ProductCreatePage />,
       },
       {
-        path: "/products/:sku",
+        path: "/products/:_id",
         element: <ProductDetailPage />,
       },
       {

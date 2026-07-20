@@ -1,34 +1,48 @@
 import { z } from "zod";
 
+const STATUS_OPTIONS = ["In Stock", "Out of Stock", "Discontinued", "Low Stock"] as const;
+const BARCODE_TYPES = ["EAN13", "CODE128", "QR"] as const;
+const UNIT_OPTIONS = ["PCS", "KG", "BOX"] as const;
+
 export const productSchema = z.object({
+  // ── Identity ──────────────────────────────────────────────
   sku: z.string().min(1, "SKU is required"),
-  productName: z.string().min(1, "Product name is required"),
-  categoryId: z.string().min(1, "Category is required"),
+  name: z.string().min(1, "Product name is required"),
+  category: z.string().min(1, "Category is required"),
   description: z.string().optional(),
 
-  status: z.enum(["ACTIVE", "INACTIVE"]),
-  unit: z.string().min(1),
+  status: z.enum(STATUS_OPTIONS, { required_error: "Status is required" }),
+  unit: z.string().min(1, "Unit is required"),
 
-  barcode: z.string().optional(),
-  barcodeType: z.enum(["EAN13", "CODE128", "QR"]),
+  // ── Barcode ───────────────────────────────────────────────
+  barcode: z.string().min(1, "Barcode is required"),
+  barcodeType: z.enum(BARCODE_TYPES),
 
-  unitCost: z.number().min(0),
-  sellingPrice: z.number().min(0),
+  // ── Pricing ───────────────────────────────────────────────
+  cost: z.number({ invalid_type_error: "Required" }).positive("Must be > 0"),
+  sellingPrice: z.number({ invalid_type_error: "Required" }).positive("Must be > 0"),
   taxRate: z.number().min(0).max(100),
 
-  weight: z.number().min(0),
-  length: z.number().min(0),
-  width: z.number().min(0),
-  height: z.number().min(0),
+  // ── Physical ──────────────────────────────────────────────
+  weight: z.number().positive("Must be > 0"),
+  length: z.number().positive("Must be > 0"),
+  width: z.number().positive("Must be > 0"),
+  height: z.number().positive("Must be > 0"),
 
-  minStock: z.number().min(0),
-  maxStock: z.number().min(0),
-  reorderPoint: z.number().min(0),
-  leadTime: z.number().min(0),
-  shelfLife: z.number().min(0),
+  // ── Inventory ─────────────────────────────────────────────
+  stock: z.number().int().min(0),
+  minStock: z.number().int().min(0),
+  maxStock: z.number().int().min(0),
+  reorderPoint: z.number().int().min(0),
+  leadTime: z.number().int().min(0),
+  shelfLife: z.number().int().min(0).nullable(),
 
-  supplierId: z.string().optional(),
-  supplierSku: z.string().optional(),
+  // ── Supplier ──────────────────────────────────────────────
+  supplier: z.string().min(1, "Supplier is required"),
+  supplierSku: z.string().min(1, "Supplier SKU is required"),
 });
 
 export type ProductForm = z.infer<typeof productSchema>;
+
+// Type that maps 1-to-1 with the backend CreateProductDto
+export type CreateProductDto = ProductForm;

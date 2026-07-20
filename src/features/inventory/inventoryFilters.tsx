@@ -76,38 +76,8 @@ export default function InventoryFilters({
     });
   };
 
-  const handleRemoveCategory = (catToRemove: string) => {
-    const updated = tempSelectedCategories.filter((c) => c !== catToRemove);
-    setTempSelectedCategories(updated);
-    onApplyFilters({
-      searchQuery: tempSearchQuery,
-      categories: updated,
-      statuses: tempSelectedStatuses,
-      stockFilters: tempStockFilters,
-    });
-  };
 
-  const handleRemoveStatus = (statusToRemove: string) => {
-    const updated = tempSelectedStatuses.filter((s) => s !== statusToRemove);
-    setTempSelectedStatuses(updated);
-    onApplyFilters({
-      searchQuery: tempSearchQuery,
-      categories: tempSelectedCategories,
-      statuses: updated,
-      stockFilters: tempStockFilters,
-    });
-  };
 
-  const handleRemoveStockFilter = (filterToRemove: string) => {
-    const updated = tempStockFilters.filter((f) => f !== filterToRemove);
-    setTempStockFilters(updated);
-    onApplyFilters({
-      searchQuery: tempSearchQuery,
-      categories: tempSelectedCategories,
-      statuses: tempSelectedStatuses,
-      stockFilters: updated,
-    });
-  };
 
   const handleClearSearch = () => {
     setTempSearchQuery("");

@@ -10,22 +10,22 @@ export default function ProductPhysical() {
 
         <FormNumberInput
           label="Weight (kg)"
-          register={register("weight")}
+          register={register("weight", { valueAsNumber: true })}
         />
 
         <FormNumberInput
           label="Length (cm)"
-          register={register("length")}
+          register={register("length", { valueAsNumber: true })}
         />
 
         <FormNumberInput
           label="Width (cm)"
-          register={register("width")}
+          register={register("width", { valueAsNumber: true })}
         />
 
         <FormNumberInput
           label="Height (cm)"
-          register={register("height")}
+          register={register("height", { valueAsNumber: true })}
         />
 
       </div>

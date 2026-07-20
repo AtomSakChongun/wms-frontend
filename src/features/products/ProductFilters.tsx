@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Search, RotateCcw, X, SlidersHorizontal } from "lucide-react";
-import { FormInput, FormAutocompleteMultiSelect } from "@/components/form";
+import { Autocomplete, Checkbox, TextField } from "@mui/material";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 
 export interface AppliedFilters {
   searchQuery: string;
@@ -12,39 +14,40 @@ export interface AppliedFilters {
 interface ProductFiltersProps {
   appliedFilters: AppliedFilters;
   onApplyFilters: (filters: AppliedFilters) => void;
-  categoriesList: string[];
-  statusesList: string[];
   filteredCount: number;
   totalCount: number;
 }
 
-const stockOptions = [
+const CATEGORY_OPTIONS = ["PPE", "Electrical", "Tools"];
+const STATUS_OPTIONS = ["In Stock", "Low Stock", "Out of Stock", "Discontinued"];
+const STOCK_OPTIONS = [
   { id: "in-stock", label: "In Stock" },
   { id: "low-stock", label: "Low Stock (<= 20)" },
   { id: "out-of-stock", label: "Out of Stock" },
 ];
 
+const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
+const checkedIcon = <CheckBoxIcon fontSize="small" />;
+
+const customTextFieldSx = {
+  backgroundColor: "#f8fafc",
+  borderRadius: 12,
+  "& .MuiOutlinedInput-root": {
+    borderRadius: 12,
+    backgroundColor: "#f8fafc",
+  },
+};
+
 export default function ProductFilters({
   appliedFilters,
   onApplyFilters,
-  categoriesList,
-  statusesList,
-  filteredCount,
-  totalCount,
 }: ProductFiltersProps) {
-  const [tempSearchQuery, setTempSearchQuery] = useState(
-    appliedFilters.searchQuery,
-  );
-  const [tempSelectedCategories, setTempSelectedCategories] = useState<
-    string[]
-  >(appliedFilters.categories);
-  const [tempSelectedStatuses, setTempSelectedStatuses] = useState<string[]>(
-    appliedFilters.statuses,
-  );
-  const [tempStockFilters, setTempStockFilters] = useState<string[]>(
-    appliedFilters.stockFilters,
-  );
+  const [tempSearchQuery, setTempSearchQuery] = useState(appliedFilters.searchQuery);
+  const [tempSelectedCategories, setTempSelectedCategories] = useState<string[]>(appliedFilters.categories);
+  const [tempSelectedStatuses, setTempSelectedStatuses] = useState<string[]>(appliedFilters.statuses);
+  const [tempStockFilters, setTempStockFilters] = useState<string[]>(appliedFilters.stockFilters);
 
+  // Sync local state when appliedFilters resets from outside
   useEffect(() => {
     setTempSearchQuery(appliedFilters.searchQuery);
     setTempSelectedCategories(appliedFilters.categories);
@@ -53,7 +56,7 @@ export default function ProductFilters({
   }, [appliedFilters]);
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault();
+    if (e) e.preventDefault();
     onApplyFilters({
       searchQuery: tempSearchQuery,
       categories: tempSelectedCategories,
@@ -73,10 +76,6 @@ export default function ProductFilters({
   };
 
   const handleResetAll = () => {
-    setTempSearchQuery("");
-    setTempSelectedCategories([]);
-    setTempSelectedStatuses([]);
-    setTempStockFilters([]);
     onApplyFilters({
       searchQuery: "",
       categories: [],
@@ -87,78 +86,119 @@ export default function ProductFilters({
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-5 transition-all duration-200 hover:shadow-md">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-1">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-            <SlidersHorizontal size={18} />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-slate-900">
-              Filter Catalog
-            </h2>
-            <p className="text-xs text-slate-500">
-              Search and filter master products · {filteredCount} / {totalCount}
-            </p>
-          </div>
+      {/* Header */}
+      <div className="flex items-center gap-2 pb-1">
+        <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+          <SlidersHorizontal size={18} />
+        </div>
+        <div>
+          <h2 className="text-sm font-semibold text-slate-900">Filter Catalog</h2>
+          <p className="text-xs text-slate-500">Search and filter master products</p>
         </div>
       </div>
 
+      {/* Filter Form */}
       <form onSubmit={handleSearchSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
-          <div className="relative">
-            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-              <Search size={18} />
-            </span>
-            <FormInput
-              label="Search"
-              placeholder="SKU, Name, Barcode..."
-              value={tempSearchQuery}
-              onChange={(event) => setTempSearchQuery(event.target.value)}
-              className="pl-11 pr-11"
-            />
-            {tempSearchQuery ? (
-              <button
-                type="button"
-                onClick={handleClearSearch}
-                className="absolute right-3 top-10 text-slate-400 hover:text-slate-600"
-                aria-label="Clear search input"
-              >
-                <X size={18} />
-              </button>
-            ) : null}
-          </div>
 
-          <FormAutocompleteMultiSelect
-            label="Category"
-            placeholder="Search categories"
-            options={categoriesList.map((item) => ({
-              label: item,
-              value: item,
-            }))}
+          {/* Search */}
+          <TextField
+            label="Search"
+            placeholder="SKU, Name, Barcode..."
+            value={tempSearchQuery}
+            onChange={(e) => setTempSearchQuery(e.target.value)}
+            size="small"
+            sx={customTextFieldSx}
+            fullWidth
+            slotProps={{
+              input: {
+                startAdornment: <Search size={18} className="text-slate-400 mr-2 shrink-0" />,
+                endAdornment: tempSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={handleClearSearch}
+                    className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                    aria-label="Clear search"
+                  >
+                    <X size={18} />
+                  </button>
+                ),
+              },
+            }}
+          />
+
+          {/* Category */}
+          <Autocomplete
+            multiple
+            options={CATEGORY_OPTIONS}
+            disableCloseOnSelect
+            getOptionLabel={(o) => o}
             value={tempSelectedCategories}
-            onChange={setTempSelectedCategories}
+            onChange={(_, v) => setTempSelectedCategories(v)}
+            renderOption={(props, option, { selected }) => {
+              const { key, ...rest } = props;
+              return (
+                <li key={key ?? option} {...rest}>
+                  <Checkbox icon={icon} checkedIcon={checkedIcon} style={{ marginRight: 8 }} checked={selected}
+                    sx={{ color: "#cbd5e1", "&.Mui-checked": { color: "#4f46e5" } }} />
+                  {option}
+                </li>
+              );
+            }}
+            renderInput={(params) => (
+              <TextField {...params} label="Category" placeholder="Select Categories" size="small" sx={customTextFieldSx} />
+            )}
           />
 
-          <FormAutocompleteMultiSelect
-            label="Status"
-            placeholder="Search statuses"
-            options={statusesList.map((item) => ({ label: item, value: item }))}
+          {/* Status */}
+          <Autocomplete
+            multiple
+            options={STATUS_OPTIONS}
+            disableCloseOnSelect
+            getOptionLabel={(o) => o}
             value={tempSelectedStatuses}
-            onChange={setTempSelectedStatuses}
+            onChange={(_, v) => setTempSelectedStatuses(v)}
+            renderOption={(props, option, { selected }) => {
+              const { key, ...rest } = props;
+              return (
+                <li key={key ?? option} {...rest}>
+                  <Checkbox icon={icon} checkedIcon={checkedIcon} style={{ marginRight: 8 }} checked={selected}
+                    sx={{ color: "#cbd5e1", "&.Mui-checked": { color: "#4f46e5" } }} />
+                  {option}
+                </li>
+              );
+            }}
+            renderInput={(params) => (
+              <TextField {...params} label="Status" placeholder="Select Statuses" size="small" sx={customTextFieldSx} />
+            )}
           />
 
-          <FormAutocompleteMultiSelect
-            label="Stock Level"
-            placeholder="Search stock levels"
-            options={stockOptions.map((item) => ({
-              label: item.label,
-              value: item.id,
-            }))}
-            value={tempStockFilters}
-            onChange={setTempStockFilters}
+          {/* Stock Level */}
+          <Autocomplete
+            multiple
+            options={STOCK_OPTIONS}
+            disableCloseOnSelect
+            getOptionLabel={(o) => o.label}
+            isOptionEqualToValue={(o, v) => o.id === v.id}
+            value={STOCK_OPTIONS.filter((o) => tempStockFilters.includes(o.id))}
+            onChange={(_, v) => setTempStockFilters(v.map((o) => o.id))}
+            renderOption={(props, option, { selected }) => {
+              const { key, ...rest } = props;
+              return (
+                <li key={key ?? option.id} {...rest}>
+                  <Checkbox icon={icon} checkedIcon={checkedIcon} style={{ marginRight: 8 }} checked={selected}
+                    sx={{ color: "#cbd5e1", "&.Mui-checked": { color: "#4f46e5" } }} />
+                  {option.label}
+                </li>
+              );
+            }}
+            renderInput={(params) => (
+              <TextField {...params} label="Stock Level" placeholder="Select Levels" size="small" sx={customTextFieldSx} />
+            )}
           />
         </div>
 
+        {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-1">
           <button
             type="button"

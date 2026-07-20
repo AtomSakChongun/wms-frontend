@@ -24,8 +24,10 @@ export default function ProductBasicInfo() {
           label="Status"
           name="status"
           options={[
-            { label: "Active", value: "ACTIVE" },
-            { label: "Inactive", value: "INACTIVE" },
+            { label: "In Stock", value: "In Stock" },
+            { label: "Low Stock", value: "Low Stock" },
+            { label: "Out of Stock", value: "Out of Stock" },
+            { label: "Discontinued", value: "Discontinued" },
           ]}
         />
 
@@ -33,13 +35,13 @@ export default function ProductBasicInfo() {
           <FormInput
             label="Product Name"
             required
-            register={register("productName")}
+            register={register("name")}
           />
         </div>
 
         <FormSelect
           label="Category"
-          name="categoryId"
+          name="category"
           placeholder="— Select category —"
           options={[
             { label: "PPE", value: "PPE" },

@@ -11,7 +11,7 @@ export default function ProductPricing() {
         <div>
           <FormNumberInput
             label="Unit Cost (USD)"
-            register={register("unitCost")}
+            register={register("cost", { valueAsNumber: true })}
             prefix="$"
           />
         </div>
@@ -19,7 +19,7 @@ export default function ProductPricing() {
         <div>
           <FormNumberInput
             label="Selling Price (USD)"
-            register={register("sellingPrice")}
+            register={register("sellingPrice", { valueAsNumber: true })}
             prefix="$"
           />
           <p className="mt-1 text-xs text-slate-400">Leave 0 if not sold directly</p>
@@ -28,7 +28,7 @@ export default function ProductPricing() {
         <div>
           <FormNumberInput
             label="Tax Rate (%)"
-            register={register("taxRate")}
+            register={register("taxRate", { valueAsNumber: true })}
             suffix="%"
           />
           <p className="mt-1 text-xs text-slate-400">Applied to selling price</p>
