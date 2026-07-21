@@ -1,20 +1,7 @@
 import { useState } from "react";
 import { Search, RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import { FormInput, FormAutocompleteMultiSelect } from "@/components/form";
-
-export interface AppliedFilters {
-  searchQuery: string;
-  suppliers: string[];
-  statuses: string[];
-  locations: string[];
-}
-interface InboundFiltersProps {
-  appliedFilters: AppliedFilters;
-  onApplyFilters: (filters: AppliedFilters) => void;
-  suppliersList: string[];
-  statusesList: string[];
-  locationsList: string[];
-}
+import type { InboundFiltersProps } from "./types";
 
 export default function InboundFilters({
   appliedFilters,

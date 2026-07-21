@@ -41,8 +41,15 @@ function toQueryParams(filters: AppliedFilters): ProductQueryParams {
   return params;
 }
 
-export function useProducts(filters?: AppliedFilters) {
-  const params = filters ? toQueryParams(filters) : {};
+export function useProducts(
+  filters?: AppliedFilters,
+  pagination?: { page: number; limit: number },
+) {
+  const params: ProductQueryParams = filters ? toQueryParams(filters) : {};
+  if (pagination) {
+    params.page = pagination.page;
+    params.limit = pagination.limit;
+  }
   return useQuery({
     queryKey: productKeys.list(params),
     queryFn: () => getProducts(params),

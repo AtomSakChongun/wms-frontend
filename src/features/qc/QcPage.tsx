@@ -1,91 +1,53 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { DataTable } from "@/components/table/DataTable";
 import { StatCard } from "@/components/ui/StatCard";
-import { qcLotsToReview } from "./qcMockData";
+import { useInbound } from "../inbound/hooks/useInbound";
 import QcFilters, { type AppliedFilters } from "./qcFilters";
 import { createQcLotListColumns } from "./columns";
 
+const EMPTY_FILTERS: AppliedFilters = {
+  searchQuery: "",
+  suppliers: [],
+  statuses: [],
+  locations: [],
+};
+
+const QC_PENDING_STATUSES = ["รอส่ง QC", "Pending QC", "Quarantine"];
+
 export default function QcPage() {
   const navigate = useNavigate();
-  const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>({
-    searchQuery: "",
-    suppliers: [],
-    statuses: [],
-    locations: [],
-  });
+  const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>(EMPTY_FILTERS);
+
+  // Fetch inbound lots from the same API as the Inbound page — QC works off
+  // the same lots, just filtered down to the ones awaiting review
+  const { data, isLoading, isError, error } = useInbound(appliedFilters);
+  const lots = data?.data ?? [];
 
   const suppliersList = useMemo(
-    () => Array.from(new Set(qcLotsToReview.map((lot) => lot.supplier))).sort(),
-    [],
+    () => Array.from(new Set(lots.map((lot) => lot.supplier))).sort(),
+    [lots],
   );
 
   const statusesList = useMemo(
-    () => Array.from(new Set(qcLotsToReview.map((lot) => lot.status))).sort(),
-    [],
+    () => Array.from(new Set(lots.map((lot) => lot.status))).sort(),
+    [lots],
   );
 
   const locationsList = useMemo(
-    () =>
-      Array.from(new Set(qcLotsToReview.map((lot) => lot.warehouseRef))).sort(),
-    [],
+    () => Array.from(new Set(lots.map((lot) => lot.receivingLocation))).sort(),
+    [lots],
   );
 
-  const filteredLots = useMemo(() => {
-    const query = appliedFilters.searchQuery.trim().toLowerCase();
-    return qcLotsToReview
-      .filter((lot) => {
-        const fields = [
-          lot.lotId,
-          lot.poNumber,
-          lot.supplier,
-          lot.status,
-          ...lot.items.flatMap((item) => [
-            item.sku,
-            item.productName,
-            item.barcode,
-          ]),
-        ];
-        const matchesSearch =
-          !query ||
-          fields.some((value) => value?.toLowerCase().includes(query));
-        return (
-          matchesSearch &&
-          (!appliedFilters.suppliers.length ||
-            appliedFilters.suppliers.includes(lot.supplier)) &&
-          (!appliedFilters.statuses.length ||
-            appliedFilters.statuses.includes(lot.status)) &&
-          (!appliedFilters.locations.length ||
-            appliedFilters.locations.includes(lot.warehouseRef))
-        );
-      })
-      .map((lot) => ({
-        ...lot,
-        itemsCount: lot.items.length,
-      }));
-  }, [appliedFilters]);
-
-  const pendingLots = qcLotsToReview.filter(
-    (lot) => lot.status === "Pending QC",
+  const pendingLots = lots.filter((lot) =>
+    QC_PENDING_STATUSES.includes(lot.status),
   ).length;
 
-  const itemsAwaitingQc = qcLotsToReview.reduce(
-    (sum, lot) =>
-      sum + lot.items.filter((item) => item.qcStatus === "Pending").length,
-    0,
-  );
-
-  const lotsPartiallyReviewed = qcLotsToReview.filter((lot) =>
-    lot.items.some(
-      (item) =>
-        item.qcStatus === "Passed" ||
-        item.qcStatus === "Failed" ||
-        item.qcStatus === "Quarantine",
-    ),
-  ).length;
+  const totalItems = lots.reduce((sum, lot) => sum + lot.items.length, 0);
 
   const columns = useMemo(
-    () => createQcLotListColumns((lotId) => navigate(`/qc/${lotId}`)),
+    () => createQcLotListColumns((id) => navigate(`/qc/${id}`)),
     [navigate],
   );
 
@@ -95,26 +57,18 @@ export default function QcPage() {
         <div>
           <h1 className="text-2xl font-bold">QC Inspection</h1>
           <p className="text-sm text-muted-foreground">
-            ตรวจสอบคุณภาพสินค้าในแต่ละล็อต · {qcLotsToReview.length} lots
-            awaiting review
+            ตรวจสอบคุณภาพสินค้าในแต่ละล็อต · {lots.length} lots awaiting review
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <StatCard
           value={pendingLots}
           label="Pending Review"
           variant="warning"
         />
-        <StatCard
-          value={itemsAwaitingQc}
-          label="Items to Check"
-        />
-        <StatCard
-          value={lotsPartiallyReviewed}
-          label="Partially Reviewed"
-        />
+        <StatCard value={totalItems} label="Total Items" />
       </div>
 
       <QcFilters
@@ -125,10 +79,20 @@ export default function QcPage() {
         onApplyFilters={setAppliedFilters}
       />
 
-      <DataTable
-        columns={columns}
-        data={filteredLots}
-      />
+      {isLoading && (
+        <div className="flex items-center justify-center py-16 text-muted-foreground">
+          <Loader2 size={20} className="animate-spin mr-2" />
+          <span className="text-sm">Loading lots...</span>
+        </div>
+      )}
+
+      {isError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          Failed to load lots: {(error as Error)?.message ?? "Unknown error"}
+        </div>
+      )}
+
+      {!isLoading && !isError && <DataTable columns={columns} data={lots} />}
     </div>
   );
 }

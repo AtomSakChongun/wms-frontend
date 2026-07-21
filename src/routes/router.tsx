@@ -47,8 +47,8 @@ export const router = createBrowserRouter([
         element: <InboundPage />,
       },
       { path: "/inbound/new", element: <InboundFormPage /> },
-      { path: "/inbound/:lotId/edit", element: <InboundFormPage /> },
-      { path: "/inbound/:lotId", element: <InboundDetailPage /> },
+      { path: "/inbound/:id/edit", element: <InboundFormPage /> },
+      { path: "/inbound/:id", element: <InboundDetailPage /> },
       {
         path: "/qc",
         element: <QcPage />,

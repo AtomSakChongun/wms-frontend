@@ -1,16 +1,19 @@
 import apiClient from "@/api/axios";
-import type { Product } from "@/features/products/columns";
+import type { Product } from "@/features/products/types";
 import type { CreateProductDto } from "@/features/productDetail/schema/product.schema";
+import type { PageParams, PaginatedResponse } from "@/types/pagination";
 
-export interface ProductQueryParams {
+export interface ProductQueryParams extends PageParams {
   search?: string;
   category?: string;
   status?: string;
   stockFilter?: string; // "in-stock" | "low-stock" | "out-of-stock"
 }
 
-export async function getProducts(params?: ProductQueryParams): Promise<Product[]> {
-  const response = await apiClient.get<Product[]>("/products", { params });
+export async function getProducts(
+  params?: ProductQueryParams,
+): Promise<PaginatedResponse<Product>> {
+  const response = await apiClient.get<PaginatedResponse<Product>>("/products", { params });
   return response.data;
 }
 

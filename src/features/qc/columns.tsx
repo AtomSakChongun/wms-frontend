@@ -2,6 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { ClipboardCheck } from "lucide-react";
 import StatusBadge from "@/components/table/StatusBadge";
 import type { QcItemReview } from "./types";
+import type { InboundLot } from "../inbound/types";
 
 export const qcItemColumns: ColumnDef<QcItemReview>[] = [
   {
@@ -88,40 +89,40 @@ export const qcItemColumns: ColumnDef<QcItemReview>[] = [
   },
 ];
 
-export const qcLotListColumns: ColumnDef<any>[] = [
+export const qcLotListColumns: ColumnDef<InboundLot>[] = [
   {
     accessorKey: "lotId",
     header: "Lot ID",
     cell: ({ row }) => (
-      <div className="font-bold text-indigo-600">{row.getValue("lotId")}</div>
+      <div className="font-bold text-indigo-600">{row.original.lotId}</div>
     ),
   },
   {
     accessorKey: "poNumber",
     header: "PO Number",
     cell: ({ row }) => (
-      <div className="text-sm">{row.getValue("poNumber") || "-"}</div>
+      <div className="text-sm">{row.original.poNumber || "-"}</div>
     ),
   },
   {
     accessorKey: "supplier",
     header: "Supplier",
     cell: ({ row }) => (
-      <div className="text-sm font-medium">{row.getValue("supplier")}</div>
+      <div className="text-sm font-medium">{row.original.supplier}</div>
     ),
   },
   {
-    accessorKey: "warehouseRef",
+    accessorKey: "receivingLocation",
     header: "Location",
     cell: ({ row }) => (
-      <div className="text-sm">{row.getValue("warehouseRef")}</div>
+      <div className="text-sm">{row.original.receivingLocation}</div>
     ),
   },
   {
     accessorKey: "receivedDate",
     header: "Received Date",
     cell: ({ row }) => {
-      const date = new Date(row.getValue("receivedDate") as string);
+      const date = new Date(row.original.receivedDate);
       return (
         <div className="text-sm">
           {date.toLocaleDateString("th-TH", {
@@ -136,44 +137,22 @@ export const qcLotListColumns: ColumnDef<any>[] = [
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => (
-      <StatusBadge status={row.getValue("status") as string} />
-    ),
+    cell: ({ row }) => <StatusBadge status={row.original.status} />,
   },
   {
-    accessorKey: "itemsCount",
+    id: "itemsCount",
     header: "Items",
     cell: ({ row }) => (
       <div className="text-sm font-medium text-center">
-        {row.getValue("itemsCount")}
+        {row.original.items.length}
       </div>
     ),
-  },
-  {
-    id: "pendingItems",
-    header: "Pending",
-    cell: ({ row }) => {
-      const pendingCount = row.original.items.filter(
-        (item: any) => item.qcStatus === "Pending",
-      ).length;
-      return (
-        <div
-          className={`text-sm font-medium text-center px-2 py-1 rounded ${
-            pendingCount > 0
-              ? "bg-yellow-100 text-yellow-800"
-              : "bg-green-100 text-green-800"
-          }`}
-        >
-          {pendingCount}
-        </div>
-      );
-    },
   },
 ];
 
 export function createQcLotListColumns(
-  onInspect: (lotId: string) => void,
-): ColumnDef<any>[] {
+  onInspect: (id: string) => void,
+): ColumnDef<InboundLot>[] {
   return [
     ...qcLotListColumns,
     {
@@ -183,7 +162,7 @@ export function createQcLotListColumns(
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onInspect(row.original.lotId);
+            onInspect(row.original._id);
           }}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
         >

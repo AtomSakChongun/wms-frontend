@@ -1,16 +1,21 @@
+import { useEffect, useMemo } from "react";
 import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ClipboardPlus, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, ClipboardPlus, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   FormInput,
-  FormNumberInput,
   FormSelect,
   FormTextarea,
   SectionTitle,
 } from "@/components/form";
-import { inboundLots } from "../inbound/inboundMockData";
-import { products } from "@/features/products/mock";
+import { useProducts } from "@/features/products/hooks/useProducts";
+import {
+  useInboundById,
+  useCreateInbound,
+  useUpdateInbound,
+} from "../inbound/hooks/useInbound";
 import {
   createLotSchema,
   type CreateLotForm,
@@ -25,40 +30,44 @@ const statusOptions = [
   { label: "Putaway", value: "Putaway" },
 ];
 
-const itemOptions = products.map((item) => ({
-  label: item.name,
-  value: item.sku,
-}));
+const EMPTY_DEFAULTS: CreateLotForm = {
+  poNumber: "",
+  supplier: "",
+  receivingLocation: "",
+  expectedDate: new Date().toISOString().slice(0, 16),
+  receivedDate: new Date().toISOString().slice(0, 16),
+  status: "รอส่ง QC",
+  qcNote: "",
+  items: [],
+};
 
 export default function InboundFormPage() {
-  const { lotId } = useParams<{ lotId: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const lot = inboundLots.find((value) => value.lotId === lotId);
-  const isEdit = Boolean(lotId && lot);
+  const isEdit = Boolean(id);
 
-  const defaultValues: CreateLotForm = {
-    poNumber: lot?.poNumber ?? "",
-    supplier: lot?.supplier ?? "",
-    warehouseRef: lot?.warehouseRef ?? "",
-    expectedDate:
-      lot?.expectedDate.slice(0, 16) ?? new Date().toISOString().slice(0, 16),
-    receivedDate:
-      lot?.receivedDate.slice(0, 16) ?? new Date().toISOString().slice(0, 16),
-    status: lot?.status ?? "รอส่ง QC",
-    qcNote: lot?.qcNote ?? "",
-    items:
-      lot?.items.map((item) => ({
-        ...item,
-        expectedQty: Number(item.expectedQty),
-        receivedQty: Number(item.receivedQty),
-        unitCost: Number(item.unitCost),
-      })) ?? [],
-  };
+  const {
+    data: lot,
+    isLoading: isLoadingLot,
+    isError: isLotError,
+  } = useInboundById(id);
+  const { mutateAsync: createInboundLot, isPending: isCreating } = useCreateInbound();
+  const { mutateAsync: updateInboundLot, isPending: isUpdating } = useUpdateInbound(
+    id ?? "",
+  );
+
+  // Product picker source — real catalog instead of mock data
+  const { data: productsData } = useProducts(undefined, { page: 1, limit: 1000 });
+  const products = productsData?.data ?? [];
+  const itemOptions = useMemo(
+    () => products.map((product) => ({ label: product.name, value: product.sku })),
+    [products],
+  );
 
   const methods = useForm<CreateLotForm>({
     resolver: zodResolver(createLotSchema),
     mode: "onChange",
-    defaultValues,
+    defaultValues: EMPTY_DEFAULTS,
   });
 
   const {
@@ -75,11 +84,32 @@ export default function InboundFormPage() {
     control,
   });
 
+  // Prefill the form once the lot is fetched (edit mode)
+  useEffect(() => {
+    if (!lot) return;
+    reset({
+      poNumber: lot.poNumber ?? "",
+      supplier: lot.supplier,
+      receivingLocation: lot.receivingLocation,
+      expectedDate: lot.expectedDate.slice(0, 16),
+      receivedDate: lot.receivedDate.slice(0, 16),
+      status: lot.status,
+      qcNote: lot.qcNote ?? "",
+      items: lot.items.map((item) => ({
+        ...item,
+        expectedQty: Number(item.expectedQty),
+        receivedQty: Number(item.receivedQty),
+        unitCost: Number(item.unitCost),
+      })),
+    });
+  }, [lot, reset]);
+
   const addItem = () =>
     append({
       lineNo: fields.length + 1,
+      productId: undefined,
       sku: "",
-      productName: "",
+      name: "",
       barcode: "",
       expectedQty: 1,
       receivedQty: 0,
@@ -99,7 +129,11 @@ export default function InboundFormPage() {
     });
 
     if (product) {
-      setValue(`items.${index}.productName`, product.name, {
+      setValue(`items.${index}.productId`, product._id, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+      setValue(`items.${index}.name`, product.name, {
         shouldDirty: true,
         shouldTouch: true,
       });
@@ -116,7 +150,11 @@ export default function InboundFormPage() {
         shouldTouch: true,
       });
     } else {
-      setValue(`items.${index}.productName`, "", {
+      setValue(`items.${index}.productId`, undefined, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+      setValue(`items.${index}.name`, "", {
         shouldDirty: true,
         shouldTouch: true,
       });
@@ -137,14 +175,34 @@ export default function InboundFormPage() {
 
   const onSubmit = async (data: CreateLotForm) => {
     try {
-      console.log("Inbound lot saved:", data);
+      if (isEdit) {
+        await updateInboundLot(data);
+        toast.success("Inbound lot updated successfully");
+      } else {
+        await createInboundLot(data);
+        toast.success("Inbound lot created successfully");
+      }
       navigate("/inbound");
-    } catch (error) {
-      console.error(error);
+    } catch {
+      toast.error(
+        isEdit ? "Failed to update inbound lot" : "Failed to create inbound lot",
+      );
     }
   };
 
-  if (isEdit && !lot)
+  const onInvalid = () => {
+    toast.error("Please check the form — some fields are missing or invalid");
+  };
+
+  if (isEdit && isLoadingLot)
+    return (
+      <div className="flex items-center justify-center gap-2 py-24 text-slate-500">
+        <Loader2 size={20} className="animate-spin" />
+        <span className="text-sm">Loading inbound lot...</span>
+      </div>
+    );
+
+  if (isEdit && (isLotError || !lot))
     return (
       <div className="py-24 text-center text-slate-500">
         Inbound lot not found
@@ -153,11 +211,11 @@ export default function InboundFormPage() {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
         <div className="rounded-2xl border bg-white p-6 shadow-sm">
           <button
             type="button"
-            onClick={() => navigate(isEdit ? `/inbound/${lotId}` : "/inbound")}
+            onClick={() => navigate(isEdit ? `/inbound/${id}` : "/inbound")}
             className="mb-3 inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-indigo-600"
           >
             <ArrowLeft size={12} />
@@ -192,7 +250,7 @@ export default function InboundFormPage() {
             <FormInput
               label="Dock / Location"
               required
-              register={register("warehouseRef")}
+              register={register("receivingLocation")}
               placeholder="DOCK-A / QC-HOLD-01"
             />
             <FormSelect label="Status" name="status" options={statusOptions} />
@@ -334,17 +392,21 @@ export default function InboundFormPage() {
         <div className="sticky bottom-0 flex flex-col-reverse gap-3 rounded-2xl border bg-white p-5 shadow-lg md:flex-row md:justify-end">
           <button
             type="button"
-            onClick={() => navigate(isEdit ? `/inbound/${lotId}` : "/inbound")}
+            onClick={() => navigate(isEdit ? `/inbound/${id}` : "/inbound")}
             className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             Cancel
           </button>
           <button
             type="submit"
-            disabled={fields.length === 0 || isSubmitting}
+            disabled={fields.length === 0 || isSubmitting || isCreating || isUpdating}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <Save size={15} />
+            {isCreating || isUpdating ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <Save size={15} />
+            )}
             {isEdit ? "Save Changes" : "Create Inbound Lot"}
           </button>
         </div>

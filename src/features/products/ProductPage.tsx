@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import type { PaginationState } from "@tanstack/react-table";
 import { DataTable } from "@/components/table/DataTable";
 import { columns } from "./columns";
 import { useProducts } from "./hooks/useProducts";
@@ -14,20 +15,37 @@ const EMPTY_FILTERS: AppliedFilters = {
   stockFilters: [],
 };
 
+const DEFAULT_PAGE_SIZE = 10;
+
 export default function ProductPage() {
   const navigate = useNavigate();
 
   const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>(EMPTY_FILTERS);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: DEFAULT_PAGE_SIZE,
+  });
 
-  // Fetch products from API with query params — refetches whenever filters change
-  const { data: products = [], isLoading, isError, error } = useProducts(appliedFilters);
+  // Fetch products from API — refetches whenever filters or the page/limit change
+  const { data, isLoading, isError, error } = useProducts(appliedFilters, {
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+  });
 
-  const totalProducts = products.length;
+  const products = data?.data ?? [];
+  const totalProducts = data?.total ?? 0;
+  // Breakdown counts reflect only the current page — the API doesn't return
+  // aggregate counts across the full filtered set
   const inStockProducts = products.filter((p) => p.status === "In Stock").length;
   const lowOutOfStock = products.filter(
     (p) => p.status === "Low Stock" || p.status === "Out of Stock"
   ).length;
   const discontinuedProducts = products.filter((p) => p.status === "Discontinued").length;
+
+  const handleApplyFilters = (filters: AppliedFilters) => {
+    setAppliedFilters(filters);
+    setPagination((p) => ({ ...p, pageIndex: 0 }));
+  };
 
   return (
     <div className="space-y-6">
@@ -76,7 +94,7 @@ export default function ProductPage() {
       {/* Filters */}
       <ProductFilters
         appliedFilters={appliedFilters}
-        onApplyFilters={setAppliedFilters}
+        onApplyFilters={handleApplyFilters}
         filteredCount={totalProducts}
         totalCount={totalProducts}
       />
@@ -98,7 +116,15 @@ export default function ProductPage() {
 
       {/* Table */}
       {!isLoading && !isError && (
-        <DataTable columns={columns} data={products} />
+        <DataTable
+          columns={columns}
+          data={products}
+          manualPagination
+          pagination={pagination}
+          onPaginationChange={setPagination}
+          pageCount={data?.totalPages ?? 0}
+          rowCount={totalProducts}
+        />
       )}
     </div>
   );

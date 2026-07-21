@@ -1,9 +1,19 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, Pencil, Trash2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { toast } from "sonner";
 import { DataTable } from "@/components/table/DataTable";
 import StatusBadge from "@/components/table/StatusBadge";
-import { inboundLots } from "../inbound/inboundMockData";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { useInboundById, useDeleteInbound } from "../inbound/hooks/useInbound";
 import type { LotItem } from "../inbound/types";
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
@@ -43,7 +53,9 @@ const itemColumns: ColumnDef<LotItem>[] = [
     accessorKey: "lineNo",
     header: "#",
     cell: ({ row }) => (
-      <span className="text-slate-400 text-xs">#{row.original.lineNo}</span>
+      <span className="text-slate-400 text-xs">
+        #{row.original.lineNo ?? row.index + 1}
+      </span>
     ),
   },
   {
@@ -55,7 +67,7 @@ const itemColumns: ColumnDef<LotItem>[] = [
       </span>
     ),
   },
-  { accessorKey: "productName", header: "PRODUCT NAME" },
+  { accessorKey: "name", header: "PRODUCT NAME" },
   {
     id: "quantity",
     header: "EXP / RCV",
@@ -81,27 +93,52 @@ const itemColumns: ColumnDef<LotItem>[] = [
   {
     accessorKey: "qcStatus",
     header: "QC STATUS",
-    cell: ({ row }) => (
-      <StatusBadge
-        status={
-          row.original.qcStatus === "Passed"
-            ? "QC Passed"
-            : row.original.qcStatus === "Failed"
-              ? "QC Failed"
-              : row.original.qcStatus === "Pending"
-                ? "Pending QC"
-                : "Quarantine"
-        }
-      />
-    ),
+    cell: ({ row }) => {
+      const statusMap: Record<string, string> = {
+        Passed: "QC Passed",
+        Failed: "QC Failed",
+        Pending: "Pending QC",
+        Quarantine: "Quarantine",
+      };
+      const status = row.original.qcStatus
+        ? statusMap[row.original.qcStatus]
+        : undefined;
+      return status ? (
+        <StatusBadge status={status} />
+      ) : (
+        <span className="text-xs text-slate-400">—</span>
+      );
+    },
   },
 ];
 
 export default function InboundDetailPage() {
-  const { lotId } = useParams<{ lotId: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const lot = inboundLots.find((value) => value.lotId === lotId);
-  if (!lot)
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const { data: lot, isLoading, isError } = useInboundById(id);
+  const { mutateAsync: deleteInboundLot, isPending: isDeleting } = useDeleteInbound();
+
+  const handleDelete = async () => {
+    if (!lot) return;
+    try {
+      await deleteInboundLot(lot._id);
+      toast.success(`Lot "${lot.lotId}" deleted successfully`);
+      navigate("/inbound");
+    } catch {
+      toast.error(`Failed to delete "${lot.lotId}"`);
+    }
+  };
+
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center gap-2 py-24 text-slate-500">
+        <Loader2 size={20} className="animate-spin" />
+        <span className="text-sm">Loading inbound lot...</span>
+      </div>
+    );
+
+  if (isError || !lot)
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-24 text-slate-500">
         <p className="text-lg font-semibold">Inbound lot not found</p>
@@ -154,7 +191,7 @@ export default function InboundDetailPage() {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => navigate(`/inbound/${lot.lotId}/edit`)}
+            onClick={() => navigate(`/inbound/${lot._id}/edit`)}
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
           >
             <Pencil size={14} />
@@ -162,6 +199,7 @@ export default function InboundDetailPage() {
           </button>
           <button
             type="button"
+            onClick={() => setConfirmOpen(true)}
             className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-600 shadow-sm hover:bg-red-50"
           >
             <Trash2 size={14} />
@@ -169,6 +207,38 @@ export default function InboundDetailPage() {
           </button>
         </div>
       </div>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Inbound Lot</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-slate-800">"{lot.lotId}"</span>?
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setConfirmOpen(false)}
+              disabled={isDeleting}
+              className="inline-flex items-center justify-center px-4 py-2 rounded-xl border border-slate-300 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-red-600 text-sm font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-60"
+            >
+              {isDeleting && <Loader2 size={14} className="animate-spin" />}
+              {isDeleting ? "Deleting..." : "Delete"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-lg font-bold text-indigo-600">
@@ -197,7 +267,7 @@ export default function InboundDetailPage() {
             />
             <Field label="PO Number" value={lot.poNumber} />
             <Field label="Supplier" value={lot.supplier} />
-            <Field label="Dock / Location" value={lot.warehouseRef} />
+            <Field label="Dock / Location" value={lot.receivingLocation} />
             <Field label="Expected Date" value={date(lot.expectedDate)} />
             <Field label="Received Date" value={date(lot.receivedDate)} />
           </div>

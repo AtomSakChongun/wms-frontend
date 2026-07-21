@@ -5,6 +5,7 @@ import { Eye, SquarePen, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import StatusBadge from "@/components/table/StatusBadge";
 import { useDeleteProduct } from "./hooks/useProducts";
+import type { Product } from "./types";
 import {
   Dialog,
   DialogContent,
@@ -13,33 +14,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-
-export interface Product {
-  _id: string;
-  sku: string;
-  name: string;
-  category: string;
-  barcode: string;
-  barcodeType?: string;
-  cost: number;
-  sellingPrice?: number;
-  taxRate?: number;
-  stock: number;
-  minStock?: number;
-  maxStock?: number;
-  reorderPoint?: number;
-  leadTime?: number;
-  shelfLife?: number;
-  status: string;
-  unit?: string;
-  description?: string;
-  weight?: number;
-  length?: number;
-  width?: number;
-  height?: number;
-  supplier?: string;
-  supplierSku?: string;
-}
 
 function ActionCell({ id, name }: { id: string; name: string }) {
   const navigate = useNavigate();

@@ -5,6 +5,7 @@ import {
   getPaginationRowModel,
   useReactTable,
   type ColumnDef,
+  type PaginationState,
 } from "@tanstack/react-table";
 import { cn } from "@/utils/cn";
 import { FormSelect } from "@/components/form";
@@ -22,6 +23,13 @@ interface Props<T> {
   defaultPageSize?: number;
   onRowClick?: (row: T) => void;
   rowClassName?: string | ((row: T) => string);
+  /** Server-side pagination — pass all three when the API itself paginates `data` */
+  manualPagination?: boolean;
+  pagination?: PaginationState;
+  onPaginationChange?: (pagination: PaginationState) => void;
+  pageCount?: number;
+  /** Total row count across all pages — falls back to data.length when omitted */
+  rowCount?: number;
 }
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
@@ -61,23 +69,41 @@ export function DataTable<T>({
   defaultPageSize = 10,
   onRowClick,
   rowClassName,
+  manualPagination = false,
+  pagination: controlledPagination,
+  onPaginationChange,
+  pageCount: manualPageCount,
+  rowCount,
 }: Props<T>) {
-  const [pagination, setPagination] = useState({
+  const [internalPagination, setInternalPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: defaultPageSize,
   });
+
+  const pagination = controlledPagination ?? internalPagination;
 
   const table = useReactTable({
     data,
     columns,
     state: { pagination },
-    onPaginationChange: setPagination,
+    onPaginationChange: (updater) => {
+      const next =
+        typeof updater === "function" ? updater(pagination) : updater;
+      if (onPaginationChange) {
+        onPaginationChange(next);
+      } else {
+        setInternalPagination(next);
+      }
+    },
+    manualPagination,
+    pageCount: manualPagination ? manualPageCount : undefined,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
 
   const pageCount = table.getPageCount();
   const currentPage = pagination.pageIndex + 1;
+  const totalRows = rowCount ?? data.length;
 
   return (
     <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
@@ -160,7 +186,7 @@ export function DataTable<T>({
         </table>
       </div>
 
-      {data.length > 0 && (
+      {totalRows > 0 && (
         <div className="flex flex-col gap-3 border-t bg-slate-50 px-5 py-3 md:flex-row md:items-center md:justify-between">
           {/* Rows per page */}
           <div className="flex items-center gap-2 text-sm">
@@ -182,7 +208,7 @@ export function DataTable<T>({
           {/* Page Info */}
           <div className="text-sm text-slate-500">
             Page <span className="font-semibold">{currentPage}</span> of{" "}
-            <span className="font-semibold">{pageCount}</span> • {data.length}{" "}
+            <span className="font-semibold">{pageCount}</span> • {totalRows}{" "}
             rows
           </div>
 

@@ -1,68 +1,65 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Download, Plus, Upload } from "lucide-react";
+import type { PaginationState } from "@tanstack/react-table";
+import { Download, Plus, Upload, Loader2 } from "lucide-react";
 import { DataTable } from "@/components/table/DataTable";
 import { StatCard } from "@/components/ui/StatCard";
-import { inboundLots } from "./inboundMockData";
-import InboundFilters, { type AppliedFilters } from "./inboundFilters";
+import { useInbound } from "./hooks/useInbound";
+import InboundFilters from "./inboundFilters";
+import type { AppliedFilters } from "./types";
 import { lotColumns } from "./lotColumns";
+
+const EMPTY_FILTERS: AppliedFilters = {
+  searchQuery: "",
+  suppliers: [],
+  statuses: [],
+  locations: [],
+};
+
+const DEFAULT_PAGE_SIZE = 10;
 
 export default function InboundPage() {
   const navigate = useNavigate();
-  const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>({
-    searchQuery: "",
-    suppliers: [],
-    statuses: [],
-    locations: [],
+  const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>(EMPTY_FILTERS);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: DEFAULT_PAGE_SIZE,
   });
+
+  // Fetch inbound lots from API — refetches whenever filters or the page/limit change
+  const { data, isLoading, isError, error } = useInbound(appliedFilters, {
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+  });
+
+  const lots = data?.data ?? [];
+  const totalLots = data?.total ?? 0;
+
+  const handleApplyFilters = (filters: AppliedFilters) => {
+    setAppliedFilters(filters);
+    setPagination((p) => ({ ...p, pageIndex: 0 }));
+  };
+
   const suppliersList = useMemo(
-    () => Array.from(new Set(inboundLots.map((lot) => lot.supplier))).sort(),
-    [],
+    () => Array.from(new Set(lots.map((lot) => lot.supplier))).sort(),
+    [lots],
   );
   const statusesList = useMemo(
-    () => Array.from(new Set(inboundLots.map((lot) => lot.status))).sort(),
-    [],
+    () => Array.from(new Set(lots.map((lot) => lot.status))).sort(),
+    [lots],
   );
   const locationsList = useMemo(
-    () =>
-      Array.from(new Set(inboundLots.map((lot) => lot.warehouseRef))).sort(),
-    [],
+    () => Array.from(new Set(lots.map((lot) => lot.receivingLocation))).sort(),
+    [lots],
   );
-  const filteredLots = useMemo(() => {
-    const query = appliedFilters.searchQuery.trim().toLowerCase();
-    return inboundLots.filter((lot) => {
-      const fields = [
-        lot.lotId,
-        lot.poNumber,
-        lot.supplier,
-        lot.status,
-        ...lot.items.flatMap((item) => [
-          item.sku,
-          item.productName,
-          item.barcode,
-        ]),
-      ];
-      const matchesSearch =
-        !query || fields.some((value) => value?.toLowerCase().includes(query));
-      return (
-        matchesSearch &&
-        (!appliedFilters.suppliers.length ||
-          appliedFilters.suppliers.includes(lot.supplier)) &&
-        (!appliedFilters.statuses.length ||
-          appliedFilters.statuses.includes(lot.status)) &&
-        (!appliedFilters.locations.length ||
-          appliedFilters.locations.includes(lot.warehouseRef))
-      );
-    });
-  }, [appliedFilters]);
 
-  const pending = inboundLots.filter(
+  const pending = lots.filter(
     (lot) => lot.status === "Pending QC" || lot.status === "Quarantine",
   ).length;
-  const passed = inboundLots.filter(
+  const passed = lots.filter(
     (lot) => lot.status === "QC Passed" || lot.status === "Putaway",
   ).length;
-  const failed = inboundLots.filter((lot) => lot.status === "QC Failed").length;
+  const failed = lots.filter((lot) => lot.status === "QC Failed").length;
 
   return (
     <div className="space-y-6">
@@ -70,7 +67,7 @@ export default function InboundPage() {
         <div>
           <h1 className="text-2xl font-bold">Inbound Receiving</h1>
           <p className="text-sm text-muted-foreground">
-            รับสินค้าเป็นล็อตและส่งต่อให้ QC ตรวจสอบ · {inboundLots.length} lots
+            รับสินค้าเป็นล็อตและส่งต่อให้ QC ตรวจสอบ · {totalLots} lots
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -99,27 +96,43 @@ export default function InboundPage() {
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard
-          value={inboundLots.length}
-          label="Total Lots"
-          variant="default"
-        />
+        <StatCard value={totalLots} label="Total Lots" variant="default" />
         <StatCard value={pending} label="Waiting for QC" variant="warning" />
         <StatCard value={passed} label="Passed / Putaway" variant="success" />
         <StatCard value={failed} label="QC Failed" variant="muted" />
       </div>
       <InboundFilters
         appliedFilters={appliedFilters}
-        onApplyFilters={setAppliedFilters}
+        onApplyFilters={handleApplyFilters}
         suppliersList={suppliersList}
         statusesList={statusesList}
         locationsList={locationsList}
       />
-      <DataTable
-        columns={lotColumns}
-        data={filteredLots}
-        defaultPageSize={10}
-      />
+
+      {isLoading && (
+        <div className="flex items-center justify-center py-16 text-muted-foreground">
+          <Loader2 size={20} className="animate-spin mr-2" />
+          <span className="text-sm">Loading inbound lots...</span>
+        </div>
+      )}
+
+      {isError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          Failed to load inbound lots: {(error as Error)?.message ?? "Unknown error"}
+        </div>
+      )}
+
+      {!isLoading && !isError && (
+        <DataTable
+          columns={lotColumns}
+          data={lots}
+          manualPagination
+          pagination={pagination}
+          onPaginationChange={setPagination}
+          pageCount={data?.totalPages ?? 0}
+          rowCount={totalLots}
+        />
+      )}
     </div>
   );
 }
