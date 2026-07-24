@@ -90,26 +90,6 @@ const itemColumns: ColumnDef<LotItem>[] = [
     cell: ({ row }) => `฿${row.original.unitCost.toLocaleString()}`,
     meta: { hideOnMobile: true },
   },
-  {
-    accessorKey: "qcStatus",
-    header: "QC STATUS",
-    cell: ({ row }) => {
-      const statusMap: Record<string, string> = {
-        Passed: "QC Passed",
-        Failed: "QC Failed",
-        Pending: "Pending QC",
-        Quarantine: "Quarantine",
-      };
-      const status = row.original.qcStatus
-        ? statusMap[row.original.qcStatus]
-        : undefined;
-      return status ? (
-        <StatusBadge status={status} />
-      ) : (
-        <span className="text-xs text-slate-400">—</span>
-      );
-    },
-  },
 ];
 
 export default function InboundDetailPage() {
